@@ -1,5 +1,6 @@
 import os
 import sys
+import zlib
 
 # At its heart, git is a key value store.
 # Git stores compressed data in blob and puts metadata in header.
@@ -51,6 +52,19 @@ def main():
         with open(".git/HEAD", "w") as f:
             f.write("ref: refs/heads/main\n")
         print("Initialized git directory")
+    elif command == "cat-file":
+        # NOTE: Blobs only store the contents of a file, not its name or permissions.
+        # All Git objects are identifiable by a 40-character SHA-1 hash, also known as the "object hash".
+        # Git objects are stored in the .git/objects directory. The path to an object is derived from its hash.
+        # Each Git Blob is stored as a separate file in the .git/objects directory. The file contains a header and the contents of the blob object, compressed using Zlib.
+        blob_hash = sys.argv[3]
+        folder_name = blob_hash[0:2]
+        file_name = blob_hash[2:]
+        with open(f"./.git/objects/{folder_name}/{file_name}", "rb") as blob_file:
+            content = zlib.decompress(blob_file.read())
+            # blob <size>\0<content>
+            required_content = (content.split(b"\0"))[1]
+            print(required_content.decode(), end="")
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
